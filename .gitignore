@@ -355,3 +355,5 @@ MigrationBackup/
 */Lib/*.dll
 
 .idea/
+
+out/
