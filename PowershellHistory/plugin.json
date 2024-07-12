@@ -1,0 +1,14 @@
+{
+  "ID": "40f47c8d20524d779baac89669570d92",
+  "ActionKeyword": "psh:",
+  "Disabled": false,
+  "IsGlobal": false,
+  "Name": "Powershell History",
+  "Author": "hciupinski",
+  "Version": "1.0.0",
+  "Language": "csharp",
+  "Website": "https://github.com/hciupinski/PowershellHistory",
+  "ExecuteFileName": "Community.PowerToys.Run.Plugin.PowershellHistory.dll",
+  "IcoPathDark": "Images\\PowershellHistory.dark.png",
+  "IcoPathLight": "Images\\PowershellHistory.light.png"
+}
