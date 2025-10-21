@@ -1,0 +1,54 @@
+name: Build and Release PowerToys Plugin
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore ./PowershellHistory/PowershellHistory.csproj
+
+      - name: Build project
+        run: dotnet build ./PowershellHistory/PowershellHistory.csproj --configuration Release --no-restore
+
+      - name: Publish project
+        run: dotnet publish ./PowershellHistory/PowershellHistory.csproj --configuration Release --output ./publish
+
+      - name: Create zip package
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath PowershellHistory.zip
+
+      - name: Get version from .csproj
+        id: get_version
+        run: |
+          $xml = [xml](Get-Content ./PowershellHistory/PowershellHistory.csproj)
+          $version = $xml.Project.PropertyGroup.Version
+          if (-not $version) { $version = "0.0.0" }
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            PowershellHistory.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
