@@ -1,38 +1,32 @@
-name: Build and Release PowerToys Plugin
+Push-Location
+Set-Location $PSScriptRoot
 
-on:
-  push:
-    branches:
-      - master
+$name = 'PowershellHistory'
+$assembly = "Community.PowerToys.Run.Plugin.$name"
+$version = "v$((Get-Content ./plugin.json | ConvertFrom-Json).Version)"
+$archs = @('x64', 'arm64')
+$tempDir = "./out/$name"
 
-jobs:
-  build-and-release:
-    name: Build and Release Plugin
-    runs-on: windows-latest
+git tag $version
+git push --tags
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # needed so gh can see existing tags
+Remove-Item ./out/*.zip -Recurse -Force -ErrorAction Ignore
+foreach ($arch in $archs) {
+	$releasePath = "./bin/$arch/Release/net9.0-windows"
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
+	dotnet build -c Release /p:Platform=$arch
 
-      - name: Install GitHub CLI
-        run: choco install gh -y
+	Remove-Item "$tempDir/*" -Recurse -Force -ErrorAction Ignore
+	mkdir "$tempDir" -ErrorAction Ignore
+	$items = @(
+		"$releasePath/$assembly.deps.json",
+		"$releasePath/$assembly.dll",
+		"$releasePath/plugin.json",
+		"$releasePath/Images"
+	)
+	Copy-Item $items "$tempDir" -Recurse -Force
+	Compress-Archive "$tempDir" "./out/$name-$version-$arch.zip" -Force
+}
 
-      - name: Authenticate GitHub CLI
-        run: gh auth setup-git
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run release script (without tagging)
-        shell: pwsh
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          ./tools/release.ps1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+gh release create $version (Get-ChildItem ./out/*.zip)
+Pop-Location
