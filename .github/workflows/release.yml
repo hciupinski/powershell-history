@@ -14,22 +14,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed so gh can see existing tags
+          fetch-depth: 0 # ensures git tags and history are available for tagging
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
 
-      - name: Install GitHub CLI
-        run: choco install gh -y
+      - name: Setup GitHub CLI
+        run: |
+          choco install gh -y
 
       - name: Authenticate GitHub CLI
         run: gh auth setup-git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run release script (without tagging)
+      - name: Run release script
         shell: pwsh
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
